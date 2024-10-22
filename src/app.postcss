@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@tailwind variants;
+
+/* `:root` doesn't work as needs to be a descendant of `:root` where Skeleton defined `--color-*`  */
+body {
+	height: 100vh;
+	--theme-color-surface-100: var(--color-surface-50);
+  --theme-color-surface-200: var(--color-surface-100);
+  --theme-color-surface-300: var(--color-surface-200);
+  --theme-color-surface-content: var(--theme-font-color-base);
+
+  html.dark & {
+    --theme-color-surface-100: var(--color-surface-700);
+    --theme-color-surface-200: var(--color-surface-800);
+    --theme-color-surface-300: var(--color-surface-900);
+    --theme-color-surface-content: var(--theme-font-color-dark);
+  }
+}
+
+
+::selection {
+	@apply bg-primary-500/30;
+}
+
+@media print {
+	@page {
+		size: landscape;
+		margin: 3rem;
+	}
+
+	.no-print {
+		display: none;
+	}
+}
+
+html {
+	--color-bg: white;
+	--color-text: black;
+}
+
+html[data-theme='dark'] {
+	--color-bg: black;
+	--color-text: white;
+}
+
+body {
+	background-color: var(--color-bg);
+	color: var(--color-text);
+}
