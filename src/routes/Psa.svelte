@@ -17,6 +17,7 @@
 		Text,
 		LineChart,
 		Tooltip,
+		Point,
 	} from "layerchart";
 	import type { Data, DataPoints } from "$lib/types";
 	import State from "$lib/components/State.svelte";
@@ -36,64 +37,12 @@
 	};
 
 	let { psas, points, show, keys }: Props = $props();
-	let clipped = $state(false);
 	const errorRed = "rgb(255, 0, 0)";
 	const padding = { left: 40, bottom: 50, right: 90, top: 0 };
 	let xDomain = $derived([
 		subDays(psas[psas.length - 1].date, show.years * 365),
 		subDays(psas[psas.length - 1].date, 0),
-		// let xDomain = $derived([
-		// 	subDays(psas[psas.length - 1].date, show.years * 365 + 60),
-		// 	subDays(psas[psas.length - 1].date, -60),
 	] as [Date, Date]);
-
-	type SeriesSettings = {
-		psa: {
-			threshold: number;
-			lowcolor: string;
-			highcolor: string;
-			dashed: number;
-			showlabels: boolean;
-		};
-		psadt: {
-			threshold: number;
-			lowcolor: string;
-			highcolor: string;
-			dashed: number;
-			showlabels: boolean;
-		};
-		psavel: {
-			threshold: number;
-			lowcolor: string;
-			highcolor: string;
-			dashed: number;
-			showlabels: boolean;
-		};
-	};
-
-	const seriessettings: SeriesSettings = {
-		psa: {
-			threshold: 4,
-			lowcolor: "hsl(var(--color-primary-500))",
-			highcolor: errorRed,
-			dashed: 0,
-			showlabels: true,
-		},
-		psadt: {
-			threshold: 2,
-			lowcolor: errorRed,
-			highcolor: "hsl(var(--color-secondary-500))",
-			dashed: 4,
-			showlabels: false,
-		},
-		psavel: {
-			threshold: 0.75,
-			lowcolor: "hsl(var(--color-secondary-500))",
-			highcolor: errorRed,
-			dashed: 6,
-			showlabels: false,
-		},
-	};
 </script>
 
 <div class="w-full h-full p-2">
@@ -109,14 +58,35 @@
 			{xDomain}
 			yDomain={[0, null]}
 			series={[
-				{ key: "psa", color: "hsl(var(--color-primary-500))" },
+				{
+					key: "psa",
+					color: "hsl(var(--color-primary-500))",
+					props: {
+						threshold: 4,
+						lowcolor: "hsl(var(--color-primary-500))",
+						highcolor: errorRed,
+						dashed: 0,
+					},
+				},
 				{
 					key: "psadt",
 					color: "hsl(var(--color-secondary-500))",
+					props: {
+						threshold: 2,
+						lowcolor: errorRed,
+						highcolor: "hsl(var(--color-secondary-500))",
+						dashed: 4,
+					},
 				},
 				{
 					key: "psavel",
 					color: "hsl(var(--color-tertiary-500))",
+					props: {
+						threshold: 0.75,
+						lowcolor: "hsl(var(--color-tertiary-500))",
+						highcolor: errorRed,
+						dashed: 6,
+					},
 				},
 			]}
 			let:padding>
@@ -231,39 +201,51 @@
 			</svelte:fragment>
 			<svelte:fragment slot="marks" let:series let:yScale let:height>
 				{#each series as s}
-					{@const key = s.key as keyof SeriesSettings}
 					{@const thresholdOffset =
-						(yScale(seriessettings[key].threshold) /
+						(yScale(s.props.threshold) /
 							(height + padding.bottom + padding.top)) *
 							100 +
 						"%"}
-					<!-- <ChartClipPath> -->
 					<LinearGradient
 						stops={[
-							[thresholdOffset, seriessettings[key].highcolor],
-							[thresholdOffset, seriessettings[key].lowcolor],
+							[thresholdOffset, s.props.highcolor],
+							[thresholdOffset, s.props.lowcolor],
 						]}
 						units="userSpaceOnUse"
 						vertical
 						let:url>
-						{#if show[key]}
-							<Spline
-								data={psas}
-								y={s.key}
-								class={`stroke-2 ${seriessettings[key].dashed ? `[stroke-dasharray:${seriessettings[key].dashed}] opacity-50` : ""}`}
+						{#if show[s.key as keyof typeof show]}
+							<Labels
+								dy={-6}
+								dx={-6}
+								class={"stroke-1 text-xs"}
 								stroke={url}
-								curve={curveCatmullRom} />
-							<Points stroke={url} r={2} />
+								format={(d) => (d == 0 ? "" : d)} />
 						{/if}
+						<!-- <Point d={series[series.length - 1]} let:x let:y>
+							<circle cx={x} cy={y} r={4} fill={url}></circle>
+							<Text
+							{x}
+							{y}
+							value={s.key}
+							verticalAnchor="middle"
+							dx={6}
+							dy={-2}
+							class="text-xs"
+							fill={url} />
+							</Point> -->
+						<ChartClipPath>
+							<Points stroke={url} r={2} />
+							{#if show[s.key as keyof typeof show]}
+								<Spline
+									data={psas}
+									y={s.key}
+									class={`stroke-2 ${s.props.dashed ? `[stroke-dasharray:${s.props.dashed}] opacity-50` : ""}`}
+									stroke={url}
+									curve={curveCatmullRom} />
+							{/if}
+						</ChartClipPath>
 					</LinearGradient>
-					{#if seriessettings[key].showlabels}
-						<Labels
-							dy={-6}
-							dx={-6}
-							class={`stroke-1 text-xs fill-${seriessettings[key].showlabels ? "white" : "transparent"}`}
-							format={(d) => (d == 0 ? "" : d)} />
-					{/if}
-					<!-- </ChartClipPath> -->
 				{/each}
 				<Brush
 					axis="x"
@@ -273,7 +255,6 @@
 						handle: "fill-red-500/50",
 						frame: "stroke-transparent",
 					}}
-					on:brushStart={() => (clipped = true)}
 					on:brushEnd={(e) => {
 						show.years = differenceInYears(
 							// @ts-expect-error-next-line
@@ -283,7 +264,6 @@
 						);
 						// @ts-expect-error-next-line
 						set(e.detail.xDomain);
-						clipped = false;
 					}} />
 			</svelte:fragment>
 			<svelte:fragment slot="tooltip" let:series let:yScale let:height>
@@ -297,7 +277,11 @@
 									: key === "psadt"
 										? " years"
 										: " ng/ml/year"}
-							<Tooltip.Item label={key} value={data[key] + units} />
+							{#if show[key as keyof typeof show]}
+								<Tooltip.Item
+									label={key.toUpperCase()}
+									value={data[key] + units} />
+							{/if}
 						{/each}
 					</Tooltip.List>
 				</Tooltip.Root>
