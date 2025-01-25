@@ -53,9 +53,61 @@
 		keys: string[];
 	};
 
+	const errorRed = "rgb(255, 0, 0)";
+	const series = [
+		{
+			key: "psa",
+			label: "PSA",
+			color: "rgb(var(--color-primary-500))",
+			props: {
+				threshold: 4,
+				lowcolor: "rgb(var(--color-primary-500))",
+				highcolor: errorRed,
+				dashed: 0,
+				labels: 100,
+			},
+		},
+		{
+			key: "psadt",
+			label: "PSADT",
+			color: "rgb(var(--color-secondary-500))",
+			props: {
+				threshold: 2,
+				lowcolor: errorRed,
+				highcolor: "rgb(var(--color-secondary-500))",
+				dashed: 4,
+				labels: 0,
+			},
+		},
+		{
+			key: "psavel",
+			label: "PSAV",
+			color: "rgb(var(--color-tertiary-500))",
+			props: {
+				threshold: 0.75,
+				lowcolor: "rgb(var(--color-tertiary-500))",
+				highcolor: errorRed,
+				dashed: 6,
+				labels: 0,
+			},
+		},
+		{
+			key: "psaavg",
+			label: "PSA Avg",
+			color: "rgb(var(--color-success-500))",
+			props: {
+				threshold: 0.75,
+				lowcolor: "rgb(var(--color-success-500))",
+				highcolor: errorRed,
+				dashed: 8,
+				labels: 0,
+			},
+		},
+	];
+
 	let { psas, points, show, keys }: Props = $props();
 	console.log(psas);
-	const errorRed = "rgb(255, 0, 0)";
+
 	const padding = { left: 40, bottom: 50, right: 90, top: 0 };
 	let xDomain = $derived([
 		subDays(psas[psas.length - 1].date, show.years * 365),
@@ -64,343 +116,103 @@
 </script>
 
 <div class="w-full h-[calc(100vh*1/2)] p-2">
-	<State initial={[null, null]} let:set>
-		<LineChart
-			data={psas}
-			x="date"
-			{padding}
-			xScale={scaleTime()}
-			yScale={scaleSqrt()}
-			xPadding={[16, 10]}
-			yPadding={[0, 5]}
-			grid={false}
-			{xDomain}
-			legend
-			yDomain={[0, null]}
-			series={[
-				...(show.psa
-					? [
-							{
-								key: "psa",
-								color: "rgb(var(--color-primary-500))",
-								props: {
-									threshold: 4,
-									lowcolor: "rgb(var(--color-primary-500))",
-									highcolor: errorRed,
-									dashed: 0,
-									labels: 100,
-								},
-							},
-						]
-					: []),
-				...(show.psadt
-					? [
-							{
-								key: "psadt",
-								color: "rgb(var(--color-secondary-500))",
-								props: {
-									threshold: 2,
-									lowcolor: errorRed,
-									highcolor: "rgb(var(--color-secondary-500))",
-									dashed: 4,
-									labels: 0,
-								},
-							},
-						]
-					: []),
-				...(show.psavel
-					? [
-							{
-								key: "psavel",
-								color: "rgb(var(--color-tertiary-500))",
-								props: {
-									threshold: 0.75,
-									lowcolor: "rgb(var(--color-tertiary-500))",
-									highcolor: errorRed,
-									dashed: 6,
-									labels: 0,
-								},
-							},
-						]
-					: []),
-				...(show.psaavg
-					? [
-							{
-								key: "psaavg",
-								color: "rgb(var(--color-success-500))",
-								props: {
-									threshold: 0.75,
-									lowcolor: "rgb(var(--color-success-500))",
-									highcolor: errorRed,
-									dashed: 8,
-									labels: 0,
-								},
-							},
-						]
-					: []),
-			]}
-			let:padding>
-			<svelte:fragment slot="axis" let:width let:xScale let:yScale let:tooltip>
-				<Axis
-					placement="bottom"
-					labelPlacement="middle"
-					class="stroke-white"
-					labelProps={{ dx: -50 }}
-					tickLabelProps={{
-						class: `stroke-transparent font-semibold fill-white`,
-					}}
-					rule />
-				<Axis
-					placement="left"
-					label="PSA (ng/ml)"
-					rule={{ class: "stroke-primary-500" }}
-					class="stroke-primary-500"
-					labelProps={{
-						class: "text-[14px] fill-primary-500 stroke-transparent",
-					}}
-					tickLabelProps={{
-						class: `stroke-transparent font-semibold fill-primary-500`,
-					}}
-					ticks={(scale) => [4, ...scale.ticks?.()]} />
-				{#if show.psa}
-					<Rule
-						y={4}
-						class={`stroke-1 stroke-primary-500 opacity-45 [stroke-dasharray:6] [stroke-linecap:round]`} />
-					<Text
-						value="PSA 4.0"
-						textAnchor="middle"
-						verticalAnchor="start"
-						y={yScale(4)}
-						x={width / 2}
-						class="fill-primary-500 text-[10px] opacity-35" />
-				{/if}
-				{#if show.psadt}
-					<Axis
-						placement="right"
-						rule={{ class: "stroke-secondary-500" }}
-						label="PSA Doubling Time (years)"
-						labelPlacement="middle"
-						tickLabelProps={{
-							dx: 8,
-							textAnchor: "start",
-							class: `stroke-transparent font-semibold fill-secondary-500`,
-						}}
-						tickLength={6}
-						labelProps={{
-							dx: -50,
-							class: "text-[14px] fill-secondary-500 stroke-transparent",
-						}}
-						format={(v) => (v.toFixed() === v ? v.toFixed() : v)}
-						ticks={(scale) => unique([...scale.ticks?.(), 2])} />
-					<Rule
-						y={2}
-						class="stroke-secondary-500 stroke-1 opacity-45 [stroke-dasharray:6] [stroke-linecap:round]" />
-					<Text
-						value="PSADT 2yrs"
-						verticalAnchor="start"
-						textAnchor="middle"
-						y={yScale(2)}
-						x={width / 2}
-						class="fill-secondary-500 text-[10px] opacity-45" />
-				{/if}
-				{#if show.psavel}
-					<Axis
-						placement="right"
-						rule={{ class: "stroke-teriary-500" }}
-						label="PSA Velocity (ng/ml/year)"
-						labelPlacement="middle"
-						format={(v) => trim0decimals(v)}
-						labelProps={{
-							dx: -50,
-							class: "text-[14px] fill-tertiary-500 stroke-transparent",
-						}}
-						tickLabelProps={{
-							dx: 8,
-							textAnchor: "start",
-							class: `stroke-transparent font-semibold fill-tertiary-500`,
-						}}
-						ticks={(scale) => unique([0.75, ...scale.ticks?.()])}
-						class={`stroke-tertiary-500 ${show.psadt ? "translate-x-[50px]" : ""}`} />
-					<Rule
-						y={0.75}
-						class="stroke-primary-600 stroke-1 opacity-45 [stroke-dasharray:6] [stroke-linecap:round]" />
-					<Text
-						value="PSAV 0.75"
-						textAnchor="middle"
-						verticalAnchor="start"
-						y={yScale(0.75)}
-						x={width / 2}
-						class="fill-tertiary-500 text-[10px] opacity-45" />
-				{/if}
+	<LineChart
+		data={psas}
+		x="date"
+		{padding}
+		xScale={scaleTime()}
+		yScale={scaleSqrt()}
+		xPadding={[16, 10]}
+		yPadding={[0, 5]}
+		grid={false}
+		{xDomain}
+		yDomain={[0, null]}
+		props={{
+			// spline: { curve: curveCatmullRom },
+			points: {
+				radius: 3,
+				// fill: "white",
+				// stroke: "rgb(var(--color-primary-500))",
+			},
+			yAxis: [
+				{
+					label: "PSA (ng/ml)",
+					rule: { ticks: 2 },
+				},
+				// {
+				// 	label: "PSA Velocity (ng/ml/yr)",
+				// 	rule: { ticks: 2 },
+				// 	placement: "right",
+				// },
+			],
 
-				{#if show.datapoints}
+			// tooltip: { header: format(date, "MMMM do yyyy") },
+			// xAxis: {
+			// 	label: "Date",
+			// 	tickFormat: (d) => format(d, "yyyy"),
+			// 	rule: { ticks: () => unique(psas.map((d) => d.date)) },
+			// },
+		}}
+		{series}
+		legend
+		let:padding>
+		<svelte:fragment
+			slot="marks"
+			let:visibleSeries
+			let:getSplineProps
+			let:yScale
+			let:height
+			let:width
+			let:tooltip>
+			{#each visibleSeries as s, i (s.key)}
+				{@const thresholdOffset =
+					(yScale(s.props.threshold) /
+						(height + padding.bottom + padding.top)) *
+						100 +
+					"%"}
+				{@const labels = s.props.labels}
+				<LinearGradient
+					stops={[
+						[thresholdOffset, s.props.highcolor],
+						[thresholdOffset, s.props.lowcolor],
+					]}
+					units="userSpaceOnUse"
+					vertical
+					let:gradient>
 					<ChartClipPath>
-						{#each points as point (point.date)}
-							<div use:popup={popupPoints}></div>
-							<Group
-								on:pointerenter={(e) => tooltip?.show(e, "points")}
-								on:pointermove={(e) => tooltip?.show(e, "points")}
-								on:pointerleave={(e) => tooltip?.hide(e)}
-								class="stroke-primary-500 stroke-2"
-								preventTouchMove>
-								<Text
-									value={point.test}
-									textAnchor="end"
-									verticalAnchor="start"
-									x={xScale(point.date)}
-									y={10}
-									rotate={-90}
-									{tooltip}
-									class="stroke-primary-500 opacity-20 text-xs select-none" />
-								<Rule
-									x={point.date}
-									class="stroke-primary-500 opacity-45 stroke-1 [stroke-dasharray:4] [stroke-linecap:round] " />
-							</Group>
-						{/each}
-					</ChartClipPath>
-				{/if}
-			</svelte:fragment>
-			<svelte:fragment
-				slot="marks"
-				let:series
-				let:yScale
-				let:height
-				let:width
-				let:tooltip>
-				{#each series as s (s.key)}
-					{@const thresholdOffset =
-						(yScale(s.props.threshold) /
-							(height + padding.bottom + padding.top)) *
-							100 +
-						"%"}
-					{@const labels = s.props.labels}
-					<LinearGradient
-						stops={[
-							[thresholdOffset, s.props.highcolor],
-							[thresholdOffset, s.props.lowcolor],
-						]}
-						units="userSpaceOnUse"
-						vertical
-						let:url>
-						<!-- <Point d={series[series.length - 1]} let:x let:y>
-							<circle cx={x} cy={y} r={4} fill={url}></circle>
-							<Text
-								{x}
-								{y}
-								value={s.key}
-								verticalAnchor="middle"
-								dx={6}
-								dy={-2}
-								class="text-xs"
-								fill={url} />
-						</Point> -->
-						<ChartClipPath>
-							<Spline
-								data={psas}
-								y={s.key}
-								class={`stroke-2 ${s.props.dashed ? `[stroke-dasharray:${s.props.dashed}] opacity-50` : ""}`}
-								stroke={url}
-								curve={curveCatmullRom} />
-							<Points fill={"white"} r={3} />
-							<Labels
-								dy={-6}
-								dx={-6}
-								format={(d) => (d == 0 ? "" : d)}
-								class={`stroke-1 text-xs`}
-								fill={s.props.labels ? s.props.color : "transparent"} />
-							<LinearGradient
-								class="from-primary-500/30 to-primary-500/0"
-								vertical
-								let:url>
+						<Spline
+							data={psas}
+							y={s.key}
+							class={`stroke-2`}
+							stroke={gradient}
+							{...getSplineProps(s, i)}
+							curve={curveCatmullRom} />
+						<!-- <Points fill={"white"} r={3} />
+						<Labels
+							dy={-6}
+							dx={-6}
+							format={(d) => (d == 0 ? "" : d)}
+							class={`stroke-1 text-xs`}
+							fill={s.props.labels ? s.props.color : "transparent"} />
+						<LinearGradient
+							class="from-primary-500/30 to-primary-500/0"
+							vertical
+							let:gradient>
+							<RectClipPath
+								x={0}
+								y={0}
+								width={tooltip.data ? tooltip.x : width}
+								{height}
+								spring>
 								<Area
-									line={{ class: "stroke-2 stroke-primary opacity-20" }}
-									fill={url}
+									line={{ class: "stroke-2 stroke-primary" }}
+									fill={gradient}
 									curve={curveCatmullRom} />
-								<RectClipPath
-									x={0}
-									y={0}
-									width={tooltip.data ? tooltip.x : width}
-									{height}
-									spring>
-									<Area
-										line={{ class: "stroke-2 stroke-primary" }}
-										fill={url}
-										curve={curveCatmullRom} />
-								</RectClipPath>
-							</LinearGradient>
-							<Highlight
-								points
-								lines={{ class: "stroke-primary [stroke-dasharray:unset]" }} />
-						</ChartClipPath>
-					</LinearGradient>
-				{/each}
-				<Brush
-					axis="x"
-					resetOnEnd
-					classes={{
-						range: "fill-red-300/10",
-						handle: "fill-red-500/50",
-						frame: "stroke-transparent",
-					}}
-					on:brushEnd={(e) => {
-						show.years = differenceInYears(
-							// @ts-expect-error-next-line
-							e.detail.xDomain[1],
-							// @ts-expect-error-next-line
-							e.detail.xDomain[0],
-						);
-						// @ts-expect-error-next-line
-						set(e.detail.xDomain);
-					}} />
-			</svelte:fragment>
-			<!-- <svelte:fragment
-				slot="tooltip"
-				let:series
-				let:yScale
-				let:height
-				let:data={points}>
-				<Tooltip.Root let:data>
-					<Tooltip.Header>{format(data.date, "MMMM do yyyy")}</Tooltip.Header>
-					<Tooltip.List>
-						<Tooltip.Item
-							label={"AAA".toUpperCase()}
-							value={data}
-							color={"red"} />
-					</Tooltip.List>
-				</Tooltip.Root>
-			</svelte:fragment> -->
-			<svelte:fragment
-				slot="tooltip"
-				let:series
-				let:points
-				let:yScale
-				let:height
-				let:data>
-				<Tooltip.Root let:data>
-					<Tooltip.Header>{format(data.date, "MMMM do yyyy")}</Tooltip.Header>
-					<Tooltip.List>
-						{#each keys as key}
-							{@const units =
-								key === "psa" || key == "psaavg"
-									? " ng/ml"
-									: key === "psadt"
-										? " years"
-										: " ng/ml/year"}
-							{#if show[key as keyof typeof show]}
-								<Tooltip.Item
-									label={key.toUpperCase()}
-									value={data[key] + units}
-									color={series.find((s: any) => s.key === key)?.color} />
-							{/if}
-						{/each}
-					</Tooltip.List>
-				</Tooltip.Root>
-			</svelte:fragment>
-		</LineChart>
-	</State>
-	<Legend />
-	<div class="card p-4 w-72 shadow-xl" data-popup="popupPoints">
-		<div><p>Demo Content</p></div>
-		<div class="arrow bg-surface-100-800-token"></div>
-	</div>
+							</RectClipPath>
+						</LinearGradient> -->
+					</ChartClipPath>
+				</LinearGradient>
+			{/each}
+		</svelte:fragment>
+	</LineChart>
 </div>

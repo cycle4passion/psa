@@ -64,7 +64,7 @@
 		Prostate Specific Antigen (PSA) History
 	</h1>
 	<div class="flex items-center gap-5 print:hidden">
-		<span class="font-bold">Show:</span>
+		<!-- <span class="font-bold">Show:</span>
 		<label for="psa" class="flex gap-2"
 			><input
 				id="psa"
@@ -96,7 +96,7 @@
 				class="checkbox"
 				type="checkbox"
 				bind:checked={show.datapoints} />
-			Data Points (Biopsies, MRIs, etc)</label>
+			Data Points (Biopsies, MRIs, etc)</label> -->
 
 		<button
 			type="button"

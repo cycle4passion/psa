@@ -3,4 +3,4 @@
 <script lang="ts">
 </script>
 
-Main Page
+<div>Main Page</div>
