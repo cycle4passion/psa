@@ -3,6 +3,7 @@ export type Data = {
 	psa: number;
 	psadt?: number;
 	psavel?: number;
+	psaavg?: number;
 };
 
 export type DataPoints = {
@@ -10,6 +11,7 @@ export type DataPoints = {
 	test?: string;
 	psa?: number;
 	psadt?: number;
+	psaavg?: number;
 	psavel?: number;
 	value?: number;
 	comment?: string;

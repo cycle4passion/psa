@@ -1,4 +1,4 @@
-<svelte:options runes={true} />
+<!-- <svelte:options runes={true} /> -->
 
 <script lang="ts">
 	import { scaleTime, scaleSqrt } from "d3-scale";
@@ -18,9 +18,25 @@
 		LineChart,
 		Tooltip,
 		Point,
+		Area,
+		RectClipPath,
+		Highlight,
+		Group,
+		Legend,
 	} from "layerchart";
 	import type { Data, DataPoints } from "$lib/types";
 	import State from "$lib/components/State.svelte";
+	import { popup } from "@skeletonlabs/skeleton";
+	import type { PopupSettings } from "@skeletonlabs/skeleton";
+
+	const popupPoints: PopupSettings = {
+		// Represents the type of event that opens/closed the popup
+		event: "hover",
+		// Matches the data-popup value on your popup element
+		target: "popupPoints",
+		// Defines which side of your trigger the popup will appear
+		placement: "bottom",
+	};
 
 	type Props = {
 		psas: Data[];
@@ -29,6 +45,7 @@
 			psa: boolean;
 			psadt: boolean;
 			psavel: boolean;
+			psaavg: boolean;
 			datapoints: boolean;
 			years: number;
 			sort: boolean;
@@ -37,6 +54,7 @@
 	};
 
 	let { psas, points, show, keys }: Props = $props();
+	console.log(psas);
 	const errorRed = "rgb(255, 0, 0)";
 	const padding = { left: 40, bottom: 50, right: 90, top: 0 };
 	let xDomain = $derived([
@@ -45,7 +63,7 @@
 	] as [Date, Date]);
 </script>
 
-<div class="w-full h-full p-2">
+<div class="w-full h-[calc(100vh*1/2)] p-2">
 	<State initial={[null, null]} let:set>
 		<LineChart
 			data={psas}
@@ -54,43 +72,75 @@
 			xScale={scaleTime()}
 			yScale={scaleSqrt()}
 			xPadding={[16, 10]}
+			yPadding={[0, 5]}
 			grid={false}
 			{xDomain}
+			legend
 			yDomain={[0, null]}
 			series={[
-				{
-					key: "psa",
-					color: "hsl(var(--color-primary-500))",
-					props: {
-						threshold: 4,
-						lowcolor: "hsl(var(--color-primary-500))",
-						highcolor: errorRed,
-						dashed: 0,
-					},
-				},
-				{
-					key: "psadt",
-					color: "hsl(var(--color-secondary-500))",
-					props: {
-						threshold: 2,
-						lowcolor: errorRed,
-						highcolor: "hsl(var(--color-secondary-500))",
-						dashed: 4,
-					},
-				},
-				{
-					key: "psavel",
-					color: "hsl(var(--color-tertiary-500))",
-					props: {
-						threshold: 0.75,
-						lowcolor: "hsl(var(--color-tertiary-500))",
-						highcolor: errorRed,
-						dashed: 6,
-					},
-				},
+				...(show.psa
+					? [
+							{
+								key: "psa",
+								color: "rgb(var(--color-primary-500))",
+								props: {
+									threshold: 4,
+									lowcolor: "rgb(var(--color-primary-500))",
+									highcolor: errorRed,
+									dashed: 0,
+									labels: 100,
+								},
+							},
+						]
+					: []),
+				...(show.psadt
+					? [
+							{
+								key: "psadt",
+								color: "rgb(var(--color-secondary-500))",
+								props: {
+									threshold: 2,
+									lowcolor: errorRed,
+									highcolor: "rgb(var(--color-secondary-500))",
+									dashed: 4,
+									labels: 0,
+								},
+							},
+						]
+					: []),
+				...(show.psavel
+					? [
+							{
+								key: "psavel",
+								color: "rgb(var(--color-tertiary-500))",
+								props: {
+									threshold: 0.75,
+									lowcolor: "rgb(var(--color-tertiary-500))",
+									highcolor: errorRed,
+									dashed: 6,
+									labels: 0,
+								},
+							},
+						]
+					: []),
+				...(show.psaavg
+					? [
+							{
+								key: "psaavg",
+								color: "rgb(var(--color-success-500))",
+								props: {
+									threshold: 0.75,
+									lowcolor: "rgb(var(--color-success-500))",
+									highcolor: errorRed,
+									dashed: 8,
+									labels: 0,
+								},
+							},
+						]
+					: []),
 			]}
 			let:padding>
-			<svelte:fragment slot="axis" let:width let:xScale let:yScale>
+			<svelte:fragment slot="axis" let:width let:xScale let:yScale let:tooltip>
 				<Axis
 					placement="bottom"
 					labelPlacement="middle"
@@ -103,7 +153,7 @@
 				<Axis
 					placement="left"
 					label="PSA (ng/ml)"
-					rule
+					rule={{ class: "stroke-primary-500" }}
 					class="stroke-primary-500"
 					labelProps={{
 						class: "text-[14px] fill-primary-500 stroke-transparent",
@@ -127,7 +177,7 @@
 				{#if show.psadt}
 					<Axis
 						placement="right"
-						rule
+						rule={{ class: "stroke-secondary-500" }}
 						label="PSA Doubling Time (years)"
 						labelPlacement="middle"
 						tickLabelProps={{
@@ -140,7 +190,6 @@
 							dx: -50,
 							class: "text-[14px] fill-secondary-500 stroke-transparent",
 						}}
-						class="stroke-secondary-500"
 						format={(v) => (v.toFixed() === v ? v.toFixed() : v)}
 						ticks={(scale) => unique([...scale.ticks?.(), 2])} />
 					<Rule
@@ -152,12 +201,12 @@
 						textAnchor="middle"
 						y={yScale(2)}
 						x={width / 2}
-						class="fill-secondary-600 text-[10px] opacity-45" />
+						class="fill-secondary-500 text-[10px] opacity-45" />
 				{/if}
 				{#if show.psavel}
 					<Axis
 						placement="right"
-						rule
+						rule={{ class: "stroke-teriary-500" }}
 						label="PSA Velocity (ng/ml/year)"
 						labelPlacement="middle"
 						format={(v) => trim0decimals(v)}
@@ -183,29 +232,48 @@
 						x={width / 2}
 						class="fill-tertiary-500 text-[10px] opacity-45" />
 				{/if}
+
 				{#if show.datapoints}
-					{#each points as point}
-						<Text
-							value={point.test}
-							textAnchor="end"
-							verticalAnchor="start"
-							x={xScale(point.date)}
-							y={10}
-							rotate={-90}
-							class="fill-primary-500 opacity-40 text-xs" />
-						<Rule
-							x={point.date}
-							class="stroke-primary-500 opacity-45 stroke-1 [stroke-dasharray:4] [stroke-linecap:round] " />
-					{/each}
+					<ChartClipPath>
+						{#each points as point (point.date)}
+							<div use:popup={popupPoints}></div>
+							<Group
+								on:pointerenter={(e) => tooltip?.show(e, "points")}
+								on:pointermove={(e) => tooltip?.show(e, "points")}
+								on:pointerleave={(e) => tooltip?.hide(e)}
+								class="stroke-primary-500 stroke-2"
+								preventTouchMove>
+								<Text
+									value={point.test}
+									textAnchor="end"
+									verticalAnchor="start"
+									x={xScale(point.date)}
+									y={10}
+									rotate={-90}
+									{tooltip}
+									class="stroke-primary-500 opacity-20 text-xs select-none" />
+								<Rule
+									x={point.date}
+									class="stroke-primary-500 opacity-45 stroke-1 [stroke-dasharray:4] [stroke-linecap:round] " />
+							</Group>
+						{/each}
+					</ChartClipPath>
 				{/if}
 			</svelte:fragment>
-			<svelte:fragment slot="marks" let:series let:yScale let:height>
-				{#each series as s}
+			<svelte:fragment
+				slot="marks"
+				let:series
+				let:yScale
+				let:height
+				let:width
+				let:tooltip>
+				{#each series as s (s.key)}
 					{@const thresholdOffset =
 						(yScale(s.props.threshold) /
 							(height + padding.bottom + padding.top)) *
 							100 +
 						"%"}
+					{@const labels = s.props.labels}
 					<LinearGradient
 						stops={[
 							[thresholdOffset, s.props.highcolor],
@@ -214,36 +282,55 @@
 						units="userSpaceOnUse"
 						vertical
 						let:url>
-						{#if show[s.key as keyof typeof show]}
-							<Labels
-								dy={-6}
-								dx={-6}
-								class={"stroke-1 text-xs"}
-								stroke={url}
-								format={(d) => (d == 0 ? "" : d)} />
-						{/if}
 						<!-- <Point d={series[series.length - 1]} let:x let:y>
 							<circle cx={x} cy={y} r={4} fill={url}></circle>
 							<Text
-							{x}
-							{y}
-							value={s.key}
-							verticalAnchor="middle"
-							dx={6}
-							dy={-2}
-							class="text-xs"
-							fill={url} />
-							</Point> -->
+								{x}
+								{y}
+								value={s.key}
+								verticalAnchor="middle"
+								dx={6}
+								dy={-2}
+								class="text-xs"
+								fill={url} />
+						</Point> -->
 						<ChartClipPath>
-							<Points stroke={url} r={2} />
-							{#if show[s.key as keyof typeof show]}
-								<Spline
-									data={psas}
-									y={s.key}
-									class={`stroke-2 ${s.props.dashed ? `[stroke-dasharray:${s.props.dashed}] opacity-50` : ""}`}
-									stroke={url}
+							<Spline
+								data={psas}
+								y={s.key}
+								class={`stroke-2 ${s.props.dashed ? `[stroke-dasharray:${s.props.dashed}] opacity-50` : ""}`}
+								stroke={url}
+								curve={curveCatmullRom} />
+							<Points fill={"white"} r={3} />
+							<Labels
+								dy={-6}
+								dx={-6}
+								format={(d) => (d == 0 ? "" : d)}
+								class={`stroke-1 text-xs`}
+								fill={s.props.labels ? s.props.color : "transparent"} />
+							<LinearGradient
+								class="from-primary-500/30 to-primary-500/0"
+								vertical
+								let:url>
+								<Area
+									line={{ class: "stroke-2 stroke-primary opacity-20" }}
+									fill={url}
 									curve={curveCatmullRom} />
-							{/if}
+								<RectClipPath
+									x={0}
+									y={0}
+									width={tooltip.data ? tooltip.x : width}
+									{height}
+									spring>
+									<Area
+										line={{ class: "stroke-2 stroke-primary" }}
+										fill={url}
+										curve={curveCatmullRom} />
+								</RectClipPath>
+							</LinearGradient>
+							<Highlight
+								points
+								lines={{ class: "stroke-primary [stroke-dasharray:unset]" }} />
 						</ChartClipPath>
 					</LinearGradient>
 				{/each}
@@ -266,13 +353,35 @@
 						set(e.detail.xDomain);
 					}} />
 			</svelte:fragment>
-			<svelte:fragment slot="tooltip" let:series let:yScale let:height>
+			<!-- <svelte:fragment
+				slot="tooltip"
+				let:series
+				let:yScale
+				let:height
+				let:data={points}>
+				<Tooltip.Root let:data>
+					<Tooltip.Header>{format(data.date, "MMMM do yyyy")}</Tooltip.Header>
+					<Tooltip.List>
+						<Tooltip.Item
+							label={"AAA".toUpperCase()}
+							value={data}
+							color={"red"} />
+					</Tooltip.List>
+				</Tooltip.Root>
+			</svelte:fragment> -->
+			<svelte:fragment
+				slot="tooltip"
+				let:series
+				let:points
+				let:yScale
+				let:height
+				let:data>
 				<Tooltip.Root let:data>
 					<Tooltip.Header>{format(data.date, "MMMM do yyyy")}</Tooltip.Header>
 					<Tooltip.List>
 						{#each keys as key}
 							{@const units =
-								key === "psa"
+								key === "psa" || key == "psaavg"
 									? " ng/ml"
 									: key === "psadt"
 										? " years"
@@ -280,7 +389,8 @@
 							{#if show[key as keyof typeof show]}
 								<Tooltip.Item
 									label={key.toUpperCase()}
-									value={data[key] + units} />
+									value={data[key] + units}
+									color={series.find((s: any) => s.key === key)?.color} />
 							{/if}
 						{/each}
 					</Tooltip.List>
@@ -288,4 +398,9 @@
 			</svelte:fragment>
 		</LineChart>
 	</State>
+	<Legend />
+	<div class="card p-4 w-72 shadow-xl" data-popup="popupPoints">
+		<div><p>Demo Content</p></div>
+		<div class="arrow bg-surface-100-800-token"></div>
+	</div>
 </div>

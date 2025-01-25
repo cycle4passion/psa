@@ -18,6 +18,12 @@ export default {
         'surface-200': 'rgb(var(--theme-color-surface-200) / <alpha-value>)',
         'surface-300': 'rgb(var(--theme-color-surface-300) / <alpha-value>)',
         'surface-content': 'rgb(var(--theme-color-surface-content) / <alpha-value>)',
+				// 'primary-500': '#0077FF',
+				// 'secondary-500': '#FF6600',
+				// 'tertiary-500': '#00FF00',
+				'primary-500': 'rgb(var(--color-primary-500) / <alpha-value>)',
+				'secondary-500': 'rgb(var(--color-secondary-500) / <alpha-value>)',
+				'tertiary-500': 'rgb(var(--color-tertiary-500) / <alpha-value>)',
       }
     },
 	},

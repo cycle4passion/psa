@@ -7,6 +7,7 @@ import { pivotLonger, pivotWider } from 'layerchart';
 		psa: number,
 		psadt: number,
 		psavel: number,
+		psaavg: number,
 		date:Date
 	}
 
@@ -14,9 +15,7 @@ import { pivotLonger, pivotWider } from 'layerchart';
 		psa: number,
 		date:Date
 	}
-
 export const load = (async () => {
-	
 	let data:Psa[] = [
 		{
 			psa: 0.4,
@@ -64,7 +63,7 @@ export const load = (async () => {
 	];
 
 	const allpsas = addPSACalcs(data);
-	// can't cacluate dt/vel for first data point, so copy the second data point to the first
+	// can't calcuate dt/vel for first data point, so copy the second data point to the first
 	allpsas[0].psadt = allpsas[1].psadt;
 	allpsas[0].psavel = allpsas[1].psavel;
 	const keys = Object.keys(allpsas[0]).filter((key) => key !== "date");
@@ -79,7 +78,14 @@ export const load = (async () => {
 }) satisfies PageServerLoad;
 
 function addPSACalcs(data: Data[]): PsaAll[] {
+	let runningAvg;
 	let lastone = data[0];
+
+	function calcAverages(
+		runningAvg: number = 0, value: number) {
+		const avg = (runningAvg + value) / 2;
+		return isFinite(avg) ? avg : 0;
+	}
 
 	function calcDoublingTime(
 		date1: Date,
@@ -109,12 +115,14 @@ function addPSACalcs(data: Data[]): PsaAll[] {
 	return data.map((current) => {
 		const { date: time2, psa: value2 } = current;
 		const { date: time1, psa: value1 } = lastone;
+		runningAvg = calcAverages(lastone.psaavg ?? value1, value2);
 		lastone = current;
 		return {
 			date: time2,
 			psa: value2,
 			psavel: calcVelocity(time1, value1 as number, time2, value2 as number),
 			psadt: calcDoublingTime(time1, value1 as number, time2, value2 as number),
+			psaavg: runningAvg
 		};
 	});
 }

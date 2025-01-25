@@ -6,6 +6,7 @@ export const prefs = persisted('srhamy', {psa: {
   psa: true,
   psadt: true,
   psavel: true,
+  psaavg: true,
   points: true,
   years: -1,
   sort: true
