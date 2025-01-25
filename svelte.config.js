@@ -9,7 +9,11 @@ const config = {
 	preprocess: [vitePreprocess()],
 
 	vitePlugin: {
-		inspector: true
+		inspector: {
+            toggleKeyCombo: 'meta-shift',
+            // showToggleButton: 'always',
+            toggleButtonPos: 'bottom-left',
+        },
 	},
 	compilerOptions: {
 		// 	runes: false
